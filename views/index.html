@@ -9,23 +9,53 @@
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
   </head>
   <body>
-    {{ template "form" . }}
+    {{ template "form" .Form }}
     <hr />
-    {{ template "display" .}}
+    {{ template "display" .Data }}
+    <script>
+      document.addEventListener("DOMContentLoaded", (event) => {
+          document.body.addEventListener('htmx:beforeSwap', function(evt) {
+              if (evt.detail.xhr.status === 422) {
+                  // allow 422 responses to swap as we are using this as a signal that
+                  // a form was submitted with bad data and want to rerender with the
+                  // errors
+                  //
+                  // set isError to false to avoid error logging in console
+                  evt.detail.shouldSwap = true;
+                  evt.detail.isError = false;
+              }
+          });
+      })
+    </script>
   </body>
 </html>
 {{ end }}
 
 {{ block "form" . }}
-<form hx-post="./contacts">
-  name: <input type="text" name="name">  
-  email: <input type="text" name="email">
+<!-- hx-swap : Instead of replacing inner context let's replace the outer context -->
+<!-- hx-target : only target the css selector element not the whole thing -->
+<!-- when a form is submitted it's default target is itself, so can remove the hx-target -->
+<form hx-swap="outerHTML" hx-post="./contacts">
+  name: <input
+    {{ if .Values.name }}
+      value="{{ .Values.name }}"
+    {{ end}}
+    type="text" name="name" />  
+  email: <input
+    {{ if .Values.email }}
+      value="{{ .Values.email }}"
+    {{ end }}
+    type="text" name="email" />
+
+  {{ if .Errors.email }}
+    <div style="color: red;"> {{ .Errors.email }} </div>
+  {{ end }}
   <button type="submit">Create Contact</button>
 </form>
 {{ end }}
 
 {{ block "display" .}}
-  <div style="display: flex; flex-direction: column;">
+  <div id="contacts" style="display: flex; flex-direction: column;">
     {{ range .Contacts }}
       <div>
         Name: <span>{{ .Name }}</span>
@@ -33,4 +63,4 @@
       </div>
     {{ end }}
   </div>
-{{ end}}
+{{ end }}
