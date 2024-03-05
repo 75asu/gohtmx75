@@ -42,7 +42,7 @@ func main() {
 
 	e.POST("/count", func(c echo.Context) error {
 		count.Count++
-		return c.Render(200, "index", count)
+		return c.Render(200, "count", count)
 	})
 	e.Logger.Fatal(e.Start(":8080"))
 }
